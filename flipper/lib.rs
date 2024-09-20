@@ -2,6 +2,8 @@
 
 #[ink::contract]
 pub mod flipper {
+    use dyn_traits::FlipperTrait;
+
     #[ink(storage)]
     pub struct Flipper {
         value: bool,
@@ -19,16 +21,18 @@ pub mod flipper {
         pub fn new_default() -> Self {
             Self::new(Default::default())
         }
+    }
 
+    impl FlipperTrait for Flipper {
         /// Flips the current value of the Flipper's boolean.
         #[ink(message)]
-        pub fn flip(&mut self) {
+        fn flip(&mut self) {
             self.value = !self.value;
         }
 
         /// Returns the current value of the Flipper's boolean.
         #[ink(message)]
-        pub fn get(&self) -> bool {
+        fn get(&self) -> bool {
             self.value
         }
     }
