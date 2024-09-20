@@ -2,24 +2,22 @@
 
 #[ink::contract]
 pub mod flipper {
-    use dyn_traits::FlipperTrait;
+    use dyn_traits::{FlipperTrait, IncrementerTrait};
 
     #[ink(storage)]
     pub struct Flipper {
         value: bool,
+        incrementer: ink::contract_ref!(IncrementerTrait),
     }
 
     impl Flipper {
         /// Creates a new flipper smart contract initialized with the given value.
         #[ink(constructor)]
-        pub fn new(init_value: bool) -> Self {
-            Self { value: init_value }
-        }
-
-        /// Creates a new flipper smart contract initialized to `false`.
-        #[ink(constructor)]
-        pub fn new_default() -> Self {
-            Self::new(Default::default())
+        pub fn new(init_value: bool, incrementer: AccountId) -> Self {
+            Self {
+                value: init_value,
+                incrementer: incrementer.into(),
+            }
         }
     }
 
@@ -28,12 +26,19 @@ pub mod flipper {
         #[ink(message)]
         fn flip(&mut self) {
             self.value = !self.value;
+            self.incrementer.inc()
         }
 
         /// Returns the current value of the Flipper's boolean.
         #[ink(message)]
         fn get(&self) -> bool {
             self.value
+        }
+
+        /// Returns the number of times the Flipper's boolean has been flipped.
+        #[ink(message)]
+        fn get_count(&self) -> u64 {
+            self.incrementer.get()
         }
     }
 
@@ -42,14 +47,8 @@ pub mod flipper {
         use super::*;
 
         #[ink::test]
-        fn default_works() {
-            let flipper = Flipper::new_default();
-            assert!(!flipper.get());
-        }
-
-        #[ink::test]
         fn it_works() {
-            let mut flipper = Flipper::new(false);
+            let mut flipper = Flipper::new(false, AccountId::from([0x01; 32]));
             assert!(!flipper.get());
             flipper.flip();
             assert!(flipper.get());
